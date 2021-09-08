@@ -7,7 +7,7 @@ import Form from "./pages/Form";
 import React, { useState, useEffect } from "react";
 
 // Import components from React Router
-import { Route, Switch } from "react-router-dom";
+import { Route, Switch, Link } from "react-router-dom";
 
 function App(props) {
   ////////////////////
@@ -19,6 +19,12 @@ function App(props) {
     margin: "10px",
   };
 
+  const button = {
+    backgroundColor: "navy",
+    display: "block",
+    margin: "auto"
+  }
+
   ///////////////
   // State & Other Variables
   ///////////////
@@ -28,6 +34,13 @@ function App(props) {
 
   // State to Hold The List of Posts
   const [posts, setPosts] = useState([]);
+
+  const nullTodo = {
+    subject: "",
+    details: ""
+  }
+
+  const [targetTodo, setTargetTodo] = useState(nullTodo)
 
   //////////////
   // Functions
@@ -39,6 +52,50 @@ function App(props) {
   const data = await response.json();
   setPosts(data);
   };
+
+  // Function to add todo from form data
+  const addTodos = async (newTodo) => {
+    const response = await fetch(url, {
+      method:"post",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(newTodo)
+    })
+
+    getTodos();
+  }
+
+  // Function to select todo to edit
+const getTargetTodo = (todo) => {
+  setTargetTodo(todo);
+  props.history.push("/edit");
+};
+
+// Function to edit todo on form submission
+const updateTodo = async (todo) => {
+  const response = await fetch(url + todo.id + "/", {
+    method: "put",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(todo),
+  });
+
+  // get updated list of todos
+  getTodos();
+};
+
+// Function to edit todo on form submission
+const deleteTodo = async (todo) => {
+  const response = await fetch(url + todo.id + "/", {
+    method: "delete",
+  });
+
+  // get updated list of todos
+  getTodos();
+  props.history.push("/");
+};
 
   //////////////
   // useEffects
@@ -54,6 +111,7 @@ function App(props) {
   return (
     <div>
       <h1 style={h1}>My Todo List</h1>
+      <Link to="/new"><button style={button}>Create New Todo</button></Link>
       <Switch>
         <Route
           exact
@@ -62,17 +120,30 @@ function App(props) {
         />
         <Route
           path="/post/:id"
-          render={(routerProps) => (
-            <SinglePost {...routerProps} posts={posts} />
-          )}
+          render={(routerProps) => <SinglePost {...routerProps} posts={posts} edit={getTargetTodo} deleteTodo={deleteTodo}
+          /> }
         />
         <Route
           path="/new"
-          render={(routerProps) => <Form {...routerProps} />}
+          render={(routerProps) => (
+            <Form
+              {...routerProps}
+              initialTodo={nullTodo}
+              handleSubmit={addTodos}
+              buttonLabel="create todo"
+            />
+          )}
         />
         <Route
           path="/edit"
-          render={(routerProps) => <Form {...routerProps} />}
+          render={(routerProps) => (
+            <Form
+              {...routerProps}
+              initialTodo={targetTodo}
+              handleSubmit={updateTodo}
+              buttonLabel="update todo"
+            />
+          )}
         />
       </Switch>
     </div>
@@ -80,3 +151,5 @@ function App(props) {
 }
 
 export default App;
+
+
